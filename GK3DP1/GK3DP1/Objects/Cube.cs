@@ -9,7 +9,9 @@ namespace GK3DP1
         private float height;
         private float depth;
         private Vector3 position;
+        private Vector3 size;
         private VertexPositionNormalTexture[] vertexes;
+        public bool isStation = false;
 
         #region Properties
 
@@ -78,6 +80,19 @@ namespace GK3DP1
             }
         }
 
+        public Vector3 Size
+        {
+            get
+            {
+                return size;
+            }
+
+            set
+            {
+                size = value;
+            }
+        }
+
         #endregion Properties
 
         public Cube(float x, float y, float z)
@@ -86,7 +101,9 @@ namespace GK3DP1
             Width = x;
             Height = y;
             Depth = z;
+            Size = new Vector3(x, y, z);
             Position = new Vector3(0.0f, 0.0f, 0.0f);
+
         }
 
         public Cube(float x, float y, float z, Vector3 startingPosition)
@@ -94,6 +111,7 @@ namespace GK3DP1
             Width = x;
             Height = y;
             Depth = z;
+            Size = new Vector3(x, y, z);
             Position = startingPosition;
         }
 
@@ -102,31 +120,52 @@ namespace GK3DP1
         {
             Vertexes = new VertexPositionNormalTexture[36];
 
-            //top face
-            Vector3 topLeftFront = Position + new Vector3(-Width, 1.0f, -Depth);
-            Vector3 topLeftBack = Position + new Vector3(-Width, 1.0f, Depth);
-            Vector3 topRightFront = Position + new Vector3(Width, 1.0f, -Depth);
-            Vector3 topRightBack = Position + new Vector3(Width, 1.0f, Depth);
+            Vector3 topLeftFront = Position + new Vector3(-1.0f, 1.0f, -1.0f) * Size;
+            Vector3 topLeftBack = Position + new Vector3(-1.0f, 1.0f, 1.0f) * Size;
+            Vector3 topRightFront = Position + new Vector3(1.0f, 1.0f, -1.0f) * Size;
+            Vector3 topRightBack = Position + new Vector3(1.0f, 1.0f, 1.0f) * Size;
 
             // Calculate the position of the vertices on the bottom face.
-            Vector3 btmLeftFront = Position + new Vector3(-Width, -Height, -Depth);
-            Vector3 btmLeftBack = Position + new Vector3(-Width, -Height, Depth);
-            Vector3 btmRightFront = Position + new Vector3(Width, -Height, -Depth);
-            Vector3 btmRightBack = Position + new Vector3(Width, -Height, Depth);
+            Vector3 btmLeftFront = Position + new Vector3(-1.0f, -1.0f, -1.0f) * Size;
+            Vector3 btmLeftBack = Position + new Vector3(-1.0f, -1.0f, 1.0f) * Size;
+            Vector3 btmRightFront = Position + new Vector3(1.0f, -1.0f, -1.0f) * Size;
+            Vector3 btmRightBack = Position + new Vector3(1.0f, -1.0f, 1.0f) * Size;
 
-            // Normal vectors for each face (needed for lighting / display)
-            Vector3 normalFront = new Vector3(0.0f * Height, 0.0f * Width, 1.0f * Depth);
-            Vector3 normalBack = new Vector3(0.0f * Height, 0.0f * Width, -1.0f * Depth);
-            Vector3 normalTop = new Vector3(0.0f * Height, 1.0f * Width, 0.0f * Depth);
-            Vector3 normalBottom = new Vector3(0.0f * Height, -1.0f * Width, 0.0f * Depth);
-            Vector3 normalLeft = new Vector3(-1.0f * Height, 0.0f * Width, 0.0f * Depth);
-            Vector3 normalRight = new Vector3(1.0f * Height, 0.0f * Width, 0.0f * Depth);
+
+
+
+            Vector3 normalFront = Vector3.Zero;
+            Vector3 normalBack = Vector3.Zero;
+            Vector3 normalTop = Vector3.Zero;
+            Vector3 normalBottom = Vector3.Zero;
+            Vector3 normalLeft = Vector3.Zero;
+            Vector3 normalRight = Vector3.Zero;
+            if (isStation == false)
+            {
+                // Normal vectors for each face (needed for lighting / display)
+                 normalFront = new Vector3(0.0f, 0.0f, 1.0f) * Size;
+                 normalBack = new Vector3(0.0f, 0.0f, -1.0f) * Size;
+                normalTop = new Vector3(0.0f, 1.0f, 0.0f) * Size;
+                 normalBottom = new Vector3(0.0f, -1.0f, 0.0f) * Size;
+                normalLeft = new Vector3(-1.0f, 0.0f, 0.0f) * Size;
+                normalRight = new Vector3(1.0f, 0.0f, 0.0f) * Size;
+            }
+            if(isStation==true)
+            {
+                normalFront = new Vector3(0.0f, 0.0f, 1.0f) * Size;
+                normalBack = new Vector3(0.0f, 0.0f, -1.0f) * Size;
+                normalTop = new Vector3(0.0f, -1.0f, 0.0f) * Size;
+                normalBottom = new Vector3(0.0f, 1.0f, 0.0f) * Size;
+                 normalLeft = new Vector3(1.0f, 0.0f, 0.0f) * Size;
+                 normalRight = new Vector3(-1.0f, 0.0f, 0.0f) * Size;
+            }
+
 
             // UV texture coordinates
-            Vector2 textureTopLeft = new Vector2(1.0f * Height, 0.0f * Width);
-            Vector2 textureTopRight = new Vector2(0.0f * Height, 0.0f * Width);
-            Vector2 textureBottomLeft = new Vector2(1.0f * Height, 1.0f * Width);
-            Vector2 textureBottomRight = new Vector2(0.0f * Height, 1.0f * Width);
+            Vector2 textureTopLeft = new Vector2(1.0f * Size.X, 0.0f * Size.Y);
+            Vector2 textureTopRight = new Vector2(0.0f * Size.X, 0.0f * Size.Y);
+            Vector2 textureBottomLeft = new Vector2(1.0f * Size.X, 1.0f * Size.Y);
+            Vector2 textureBottomRight = new Vector2(0.0f * Size.X, 1.0f * Size.Y);
 
             // Add the vertices for the FRONT face.
             Vertexes[0] = new VertexPositionNormalTexture(topLeftFront, normalFront, textureTopLeft);

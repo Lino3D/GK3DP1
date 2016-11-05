@@ -1,4 +1,5 @@
-﻿using Microsoft.Xna.Framework;
+﻿using GK3DP1.Objects;
+using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
 
@@ -11,10 +12,13 @@ namespace GK3DP1
     {
         #region Globals
 
-        private GraphicsDeviceManager graphics;
-        private SpriteBatch spriteBatch;
-        private BasicEffect basicEffect;
-        private Model model;
+        private GraphicsDeviceManager Graphics;
+        private SpriteBatch SpriteBatch;
+        private BasicEffect BasicEffect;
+
+        private Effect SampleEffect;
+
+        private Model Model;
 
         //Geometric info
         // private VertexBuffer vertexBuffer;
@@ -24,44 +28,45 @@ namespace GK3DP1
         private VertexPositionNormalTexture[] someCube;
         private VertexPositionNormalTexture[] Bench;
 
-        private Robot robot;
-        private Camera camera;
-        private Texture2D concreteTexture;
-        private Texture2D steelnetTexture;
-        private Texture2D steelSeamlessTexture;
+        private Robot Robot;
+        private Robot Robot2;
+        private Camera Camera;
+        private Texture2D ConcreteTexture;
+        private Texture2D SteelnetTexture;
+        private Texture2D SteelSeamlessTexture;
+
+        private EffectParameter WorldParemeter;
+        private EffectParameter ProjectionParameter;
+        private EffectParameter ViewParamter;
+
+
+        private TestCube cubeTest;
+
 
         #endregion Globals
 
         public Game1()
         {
-            graphics = new GraphicsDeviceManager(this);
+            Graphics = new GraphicsDeviceManager(this);
             Content.RootDirectory = "Content";
         }
 
         protected override void Initialize()
         {
-            robot = new Robot();
-            robot.Initialize(Content);
+            Robot = new Robot();
+            Robot.Initialize(Content);
+            Robot2 = new Robot();
+            Robot2.Initialize(Content);
             InitializeEffects();
-            camera = new Camera(graphics.GraphicsDevice);
+            Camera = new Camera(Graphics.GraphicsDevice);
             //this.IsMouseVisible = true;
             base.Initialize();
         }
 
         private void InitializeEffects()
         {
-            basicEffect = new BasicEffect(GraphicsDevice);
-
-            //basicEffect.AmbientLightColor = Vector3.One;
-            //basicEffect.DirectionalLight0.Enabled = true;
-            //basicEffect.DirectionalLight0.DiffuseColor =
-            //                            Vector3.One;
-            //basicEffect.DirectionalLight0.Direction =
-            //         Vector3.Normalize(Vector3.One);
-            //basicEffect.LightingEnabled = true;
-
-            //basicEffect.TextureEnabled = true;
-            //basicEffect.Texture = stationTexture;
+            BasicEffect = new BasicEffect(GraphicsDevice);
+            BasicEffect.TextureEnabled = true;
         }
 
         /// <summary>
@@ -70,28 +75,41 @@ namespace GK3DP1
         /// </summary>
         protected override void LoadContent()
         {
-            model = Content.Load<Model>("robot");
+            Model = Content.Load<Model>("robot");
+            SampleEffect = Content.Load<Effect>("SampleEffect");
 
-            // Create a new SpriteBatch, which can be used to draw textures.
-            spriteBatch = new SpriteBatch(GraphicsDevice);
-            var myCube = new Cube(20, 40, 60);
-            Station = myCube.MakeCube();
 
-            var mySecondCube = new Cube(5, 5, 60, new Vector3(0.0f, -40.0f, 0.0f));
-            RailWay = mySecondCube.MakeCube();
+            ProjectionParameter = SampleEffect.Parameters["Projection"];
+            WorldParemeter = SampleEffect.Parameters["World"];
+            ViewParamter = SampleEffect.Parameters["View"];
+
+            CreateCubes();
+        }
+
+        private void CreateCubes()
+        {
+            SpriteBatch = new SpriteBatch(GraphicsDevice);
+            var stationCube = new Cube(20, 40, 60);
+            stationCube.isStation = true;
+            Station = stationCube.MakeCube();
+
+            var railwayCube = new Cube(5, 5, 60, new Vector3(0.0f, -40.0f, 0.0f));
+            RailWay = railwayCube.MakeCube();
 
             var someSmallCube = new Cube(4, 2, 2, new Vector3(0, 0, 0));
             someCube = someSmallCube.MakeCube();
             Bench = new Bench(someSmallCube).Vertexes;
 
+            cubeTest = new TestCube(new Vector3(0, -5, 2), new Vector3(3, 3, 3));
+            cubeTest.ConstructCube();
             LoadTextures();
         }
 
         private void LoadTextures()
         {
-            concreteTexture = Content.Load<Texture2D>("tex.jpg");
-            steelnetTexture = Content.Load<Texture2D>("steelnet.jpg");
-            steelSeamlessTexture = Content.Load<Texture2D>("steel.jpg");
+            ConcreteTexture = Content.Load<Texture2D>("tex");
+            SteelnetTexture = Content.Load<Texture2D>("steelnet");
+            SteelSeamlessTexture = Content.Load<Texture2D>("steel");
         }
 
         /// <summary>
@@ -109,7 +127,7 @@ namespace GK3DP1
         {
             if (GamePad.GetState(PlayerIndex.One).Buttons.Back == ButtonState.Pressed || Keyboard.GetState().IsKeyDown(Keys.Escape))
                 Exit();
-            camera.Update(gameTime);
+            Camera.Update(gameTime);
             base.Update(gameTime);
         }
 
@@ -121,61 +139,146 @@ namespace GK3DP1
         {
             GraphicsDevice.Clear(Color.CornflowerBlue);
 
-            DrawStation();
-            DrawBench(new Vector3(15, -25, 17),Matrix.CreateFromAxisAngle(Vector3.UnitY, MathHelper.ToRadians(90)));
-            DrawBench(new Vector3(-10, -25, 17),Matrix.CreateFromAxisAngle(Vector3.UnitY, MathHelper.ToRadians(270)));
-            robot.Draw(camera, new Vector3(9, 0, 0));
+            DrawStationWithEffect();
+            // DrawBench(new Vector3(15, -25, 17),Matrix.CreateFromAxisAngle(Vector3.UnitY, MathHelper.ToRadians(90)));
+            //  DrawBench(new Vector3(-10, -25, 17),Matrix.CreateFromAxisAngle(Vector3.UnitY, MathHelper.ToRadians(270)));
+            // Robot2.Draw(Camera, new Vector3(14, -15, 0));
+            // Robot2.Draw(Camera, new Vector3(10, -20, 0));
+            Robot.DrawWithEffect(Camera, new Vector3(0, -5, 0), SampleEffect);
+           // DrawStationWithEffect();
+            // DrawBenchSampleEffect(new Vector3(0, -10, 5));
+            DrawCubeSampleEffect(new Vector3(10, -5, 0));
 
             base.Draw(gameTime);
         }
 
         private void DrawStation()
         {
-            basicEffect.View = camera.ViewMatrix;
-            basicEffect.Projection = camera.ProjectionMatrix;
-            basicEffect.World = Matrix.CreateTranslation(new Vector3(0.0f,15f,0.0f));
-            basicEffect.Texture = concreteTexture;
+            BasicEffect.View = Camera.ViewMatrix;
+            BasicEffect.Projection = Camera.ProjectionMatrix;
+            BasicEffect.World = Matrix.CreateTranslation(new Vector3(0.0f,15f,0.0f));
+            BasicEffect.Texture = ConcreteTexture;
             RasterizerState rasterizerState = new RasterizerState();
             rasterizerState.CullMode = CullMode.None;
             GraphicsDevice.RasterizerState = rasterizerState;
-            foreach (EffectPass pass in basicEffect.CurrentTechnique.
+            foreach (EffectPass pass in BasicEffect.CurrentTechnique.
                     Passes)
             {
                 pass.Apply();
-                graphics.GraphicsDevice.DrawUserPrimitives<VertexPositionNormalTexture>(PrimitiveType.TriangleList, Station,
+                Graphics.GraphicsDevice.DrawUserPrimitives<VertexPositionNormalTexture>(PrimitiveType.TriangleList, Station,
                                 0, 12);
             }
-            basicEffect.Texture = steelSeamlessTexture;
+            BasicEffect.Texture = SteelSeamlessTexture;
 
-            foreach (EffectPass pass in basicEffect.CurrentTechnique.
+            foreach (EffectPass pass in BasicEffect.CurrentTechnique.
                    Passes)
             {
                 pass.Apply();
-                graphics.GraphicsDevice.DrawUserPrimitives<VertexPositionNormalTexture>(PrimitiveType.TriangleList, RailWay,
+                Graphics.GraphicsDevice.DrawUserPrimitives<VertexPositionNormalTexture>(PrimitiveType.TriangleList, RailWay,
+                               0, 12);
+            }
+        }
+        private void DrawStationWithEffect()
+        {
+            BasicEffect.View = Camera.ViewMatrix;
+            BasicEffect.Projection = Camera.ProjectionMatrix;
+            BasicEffect.World = Matrix.CreateTranslation(new Vector3(0.0f, 15f, 0.0f));
+            BasicEffect.Texture = ConcreteTexture;
+
+
+
+
+            RasterizerState rasterizerState = new RasterizerState();
+            rasterizerState.CullMode = CullMode.None;
+            GraphicsDevice.RasterizerState = rasterizerState;
+            SampleEffect.Parameters["BasicTexture"].SetValue(SteelSeamlessTexture);
+            ViewParamter.SetValue(Camera.ViewMatrix);
+            ProjectionParameter.SetValue(Camera.ProjectionMatrix);
+            Matrix world = Matrix.CreateTranslation(new Vector3(0.0f, 15f, 0.0f));
+
+            //Matrix worldInverseTransposeMatrix = Matrix.Transpose(Matrix.Invert(world));
+            //SampleEffect.Parameters["WorldInverseTranspose"].SetValue(worldInverseTransposeMatrix);
+            WorldParemeter.SetValue(world);
+
+            foreach (EffectPass pass in SampleEffect.CurrentTechnique.
+                    Passes)
+            {
+                pass.Apply();
+                Graphics.GraphicsDevice.DrawUserPrimitives<VertexPositionNormalTexture>(PrimitiveType.TriangleList, Station,
+                                0, 12);
+            }
+            BasicEffect.Texture = SteelSeamlessTexture;
+
+            foreach (EffectPass pass in SampleEffect.CurrentTechnique.
+                   Passes)
+            {
+                pass.Apply();
+                Graphics.GraphicsDevice.DrawUserPrimitives<VertexPositionNormalTexture>(PrimitiveType.TriangleList, RailWay,
                                0, 12);
             }
         }
 
+
+
+
         private void DrawBench(Vector3 position, params Matrix[] matrices )
         {
-            basicEffect.View = camera.ViewMatrix;
-            basicEffect.Projection = camera.ProjectionMatrix;
+            BasicEffect.View = Camera.ViewMatrix;
+            BasicEffect.Projection = Camera.ProjectionMatrix;
 
-            basicEffect.TextureEnabled = true;
-            basicEffect.Texture = steelnetTexture;
+            //BasicEffect.TextureEnabled = true;
+            BasicEffect.Texture = SteelnetTexture;
 
-            basicEffect.World = Matrix.CreateTranslation(position);
+            BasicEffect.World = Matrix.CreateTranslation(position);
             foreach (Matrix m in matrices)
             {
-                basicEffect.World *= m;
+                BasicEffect.World *= m;
             }
             
 
-            foreach (var pass in basicEffect.CurrentTechnique.Passes)
+            foreach (var pass in BasicEffect.CurrentTechnique.Passes)
             {
                 pass.Apply();
-                graphics.GraphicsDevice.DrawUserPrimitives<VertexPositionNormalTexture>(PrimitiveType.TriangleList, Bench,
+                Graphics.GraphicsDevice.DrawUserPrimitives<VertexPositionNormalTexture>(PrimitiveType.TriangleList, Bench,
                                                0, 24);
+            }
+        }
+        private void DrawBenchSampleEffect(Vector3 position, params Matrix[] matrices)
+        {
+            ViewParamter.SetValue(Camera.ViewMatrix);
+            ProjectionParameter.SetValue(Camera.ProjectionMatrix);
+            Matrix world = Matrix.CreateTranslation(position);
+
+            Matrix worldInverseTransposeMatrix = Matrix.Transpose(Matrix.Invert(world));
+            SampleEffect.Parameters["WorldInverseTranspose"].SetValue(worldInverseTransposeMatrix);
+
+         //   SampleEffect.Parameters["BasicTexture"].SetValue(SteelSeamlessTexture);
+
+            WorldParemeter.SetValue( world);
+            foreach (var pass in SampleEffect.CurrentTechnique.Passes)
+            {
+                pass.Apply();
+                Graphics.GraphicsDevice.DrawUserPrimitives<VertexPositionNormalTexture>(PrimitiveType.TriangleList, Bench,
+                                               0, 24);
+            }
+        }
+        private void DrawCubeSampleEffect(Vector3 position, params Matrix[] matrices)
+        {
+            ViewParamter.SetValue(Camera.ViewMatrix);
+            ProjectionParameter.SetValue(Camera.ProjectionMatrix);
+            Matrix world = Matrix.CreateTranslation(position);
+
+            Matrix worldInverseTransposeMatrix = Matrix.Transpose(Matrix.Invert(world));
+            SampleEffect.Parameters["WorldInverseTranspose"].SetValue(worldInverseTransposeMatrix);
+
+            //   SampleEffect.Parameters["BasicTexture"].SetValue(SteelSeamlessTexture);
+
+            WorldParemeter.SetValue(world);
+            foreach (var pass in SampleEffect.CurrentTechnique.Passes)
+            {
+                pass.Apply();
+                Graphics.GraphicsDevice.DrawUserPrimitives<VertexPositionNormalTexture>(PrimitiveType.TriangleList, someCube,
+                                               0, 12);
             }
         }
     }

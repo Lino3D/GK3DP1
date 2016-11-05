@@ -12,7 +12,6 @@ namespace GK3DP1
 
         private Vector3 cameraPosition = new Vector3(4, 8, 5);
         private Vector3 cameraUp = Vector3.UnitY;
-
         private Vector3 cameraDirection;
 
         private float leftrightRot = MathHelper.PiOver2;
@@ -20,7 +19,7 @@ namespace GK3DP1
 
         private MouseState prevMouseState;
 
-        private const float MoveSpeed = 40f;
+        private const float MoveSpeed = 30f;
         private const float MouseSensitivity = 0.006f;
         public Matrix ViewMatrix { get; set; }
 
