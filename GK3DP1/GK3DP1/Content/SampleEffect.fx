@@ -3,12 +3,14 @@
 	#define VS_SHADERMODEL vs_3_0
 	#define PS_SHADERMODEL ps_3_0
 #else
-	#define VS_SHADERMODEL vs_4_0_level_9_1
-	#define PS_SHADERMODEL ps_4_0_level_9_1
+	#define VS_SHADERMODEL vs_4_0_level_9_3
+	#define PS_SHADERMODEL ps_4_0_level_9_3
 #endif
 
 
 #define NUMSPOTLIGHTS 2 
+#define NUMPOINTLIGHTS 2
+
 
 float4x4 World;
 float4x4 View;
@@ -17,15 +19,22 @@ float4x4 Projection;
 float3 AmbientLightColor = float3(.15, .15, .15);
 float3 DiffuseColor = float3(.85, .85, .85);
 
-float3 LightPosition[NUMSPOTLIGHTS];
-float3 LightColor[NUMSPOTLIGHTS];
+float3 LightPosition[4];
+float3 LightColor[4];
 
-float LightAttenuation = 5000;
-float LightFalloff = 2;
-float4x4 WorldInverseTranspose;
+//    float3 LightPositionSpot[NUMSPOTLIGHTS];
+//    float3 LightColorSpot[NUMSPOTLIGHTS];
+ float3 LightDirectionSpot[4];
+
+float ConeAngle = 45;
+
+
+float LightAttenuation = 1000;
+float LightFalloff = 20;
+//float4x4 WorldInverseTranspose;
 
 //float3 DiffuseLightDirection = float3(1, 0, 0);
-//float DiffuseIntensity = 0.2;
+float DiffuseIntensity = 0.2;
 
 
 bool TextureEnabled = true;
@@ -81,16 +90,34 @@ float4 PixelShaderFunction(VertexShaderOutput input) : COLOR0
   
 	totalLight += AmbientLightColor;
 
-	for (int i = 0; i < NUMSPOTLIGHTS; i++)
-	{
-		float3 lightDir = normalize(LightPosition[i] - input.WorldPosition);
-		float diffuse = saturate(dot(normalize(input.Normal), lightDir));
-		float d = distance(LightPosition[i], input.WorldPosition);
-		float att = 1 - pow(clamp(d / LightAttenuation, 0, 1),
+    float att = 1;
+    float a = cos(ConeAngle);
+
+	for (int i = 0; i < 4; i++)
+    {
+        float3 lightDir = normalize(LightPosition[i] - input.WorldPosition);
+        float3 diffuse = saturate(dot(normalize(input.Normal), lightDir));
+
+
+        if (i < NUMPOINTLIGHTS)
+        {
+        float d = distance(LightPosition[i], input.WorldPosition);
+            att = 1 - pow(clamp(d / LightAttenuation, 0, 1),
    LightFalloff);
-   
+        }
+        else
+            {
+            float a = cos(ConeAngle);
+            att=0;
+            float d = dot(-lightDir, normalize(LightDirectionSpot[i]));
+        if (a < d)
+            att = 1 - pow(clamp(a / d, 0, 1), LightFalloff);
+            }
+
 		totalLight += diffuse * att * LightColor[i];
 	}
+
+
 	float3 output = saturate(totalLight) * diffuseColor;
 
 	return float4(output, 1);
@@ -101,6 +128,20 @@ technique Ambient
 	pass Pass1
 	{
 		VertexShader = compile VS_SHADERMODEL VertexShaderFunction();
-		PixelShader = compile PS_SHADERMODEL PixelShaderFunction();
-	}
+        PixelShader = compile PS_SHADERMODEL PixelShaderFunction();
+    }
 }
+
+
+
+    //for (int j = 0; j < NUMSPOTLIGHTS; j++)
+    //{
+    //     lightDir = normalize(LightPositionSpot[j] - input.WorldPosition);
+    //     diffuse = saturate(dot(normalize(input.Normal), lightDir));
+        
+    //     att = 0;
+    //  //  if (a < d)
+    //        att = 1 - pow(clamp(a / d, 0, 1), LightFalloff);
+
+    //    totalLight += diffuse * att * LightColorSpot[j];
+    //}

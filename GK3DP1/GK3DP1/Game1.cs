@@ -40,9 +40,12 @@ namespace GK3DP1
         private EffectParameter ViewParameter;
         private EffectParameter TextureParameter;
 
-        private Vector3[] LightPosition = new Vector3[2];
-        private Vector3[] LightColor = new Vector3 [2];
-    
+        private Vector3[] LightPosition = new Vector3[4];
+        private Vector3[] LightColor = new Vector3 [4];
+
+//        private Vector3[] LightPositionSpot = new Vector3[2];
+  //      private Vector3[] LightColorSpot = new Vector3[2];
+        private Vector3[] LightDirectionSpot = new Vector3[4];
 
 
 
@@ -61,16 +64,25 @@ namespace GK3DP1
             InitializeEffects();
             Camera = new Camera(Graphics.GraphicsDevice);
 
-            LightPosition[0] = new Vector3(5, -10, -25);
-            LightPosition[1] = new Vector3(5, -10, 25);
+            LightPosition[0] = new Vector3(10, 10, -25);
+            LightPosition[1] = new Vector3(8, 10, 25);
+            LightPosition[2] = new Vector3(45, -5, 0);
 
-            LightColor[0] = new Vector3(0f, 0, 1f);
-            LightColor[1] = new Vector3(1f, 0, 0f);
+            LightPosition[3] = new Vector3(-45, 0, -15);
 
+            LightColor[0] = new Vector3(1f, 1, 1f);
+            LightColor[1] = new Vector3(0f, 1, 0f);
+            LightColor[2] = new Vector3(0f, 0, 1f);
 
-           
+            LightColor[3] = new Vector3(1.0f, 0f,0);
 
+        
 
+            LightDirectionSpot[0] = new Vector3(0, -1f, 0);
+            LightDirectionSpot[1] = new Vector3(0, -1f, 0);
+
+            LightDirectionSpot[2] = new Vector3(0, -1f, 0);
+            LightDirectionSpot[3] = new Vector3(0,  -1f, 0);
             base.Initialize();
         }
 
@@ -78,6 +90,13 @@ namespace GK3DP1
         {
             BasicEffect = new BasicEffect(GraphicsDevice);
             BasicEffect.TextureEnabled = true;
+            BasicEffect.EnableDefaultLighting();
+            BasicEffect.LightingEnabled = true; // turn on the lighting subsystem.
+            BasicEffect.DirectionalLight0.DiffuseColor = new Vector3(0.5f, 0, 0); // a red light
+            BasicEffect.DirectionalLight0.Direction = new Vector3(1, 0, 0);  // coming along the x-axis
+            BasicEffect.DirectionalLight0.SpecularColor = new Vector3(0, 1, 0); // with green highlights
+
+
         }
 
         /// <summary>
@@ -96,6 +115,11 @@ namespace GK3DP1
 
             SampleEffect.Parameters["LightColor"].SetValue(LightColor);
             SampleEffect.Parameters["LightPosition"].SetValue(LightPosition);
+
+            // SampleEffect.Parameters["LightColorSpot"].SetValue(LightColorSpot);
+            //SampleEffect.Parameters["LightPositionSpot"].SetValue(LightPositionSpot);
+            SampleEffect.Parameters["LightDirectionSpot"].SetValue(LightDirectionSpot);
+
             CreateCubes();
         }
 
@@ -151,8 +175,7 @@ namespace GK3DP1
             GraphicsDevice.Clear(Color.CornflowerBlue);
 
             DrawStationWithEffect();
-            // DrawBench(new Vector3(15, -25, 17),Matrix.CreateFromAxisAngle(Vector3.UnitY, MathHelper.ToRadians(90)));
-            //  DrawBench(new Vector3(-10, -25, 17),Matrix.CreateFromAxisAngle(Vector3.UnitY, MathHelper.ToRadians(270)));
+
             Robot.DrawWithEffect(Camera, new Vector3(15, -22, -35), SampleEffect);
             Robot.DrawWithEffect(Camera, new Vector3(-10, -22, 20), SampleEffect);
             // DrawStationWithEffect();
@@ -176,6 +199,7 @@ namespace GK3DP1
             ProjectionParameter.SetValue(Camera.ProjectionMatrix);
             Matrix world = Matrix.CreateTranslation(new Vector3(0.0f, 15f, 0.0f));
 
+
             WorldParemeter.SetValue(world);
             foreach (EffectPass pass in SampleEffect.CurrentTechnique.
                     Passes)
@@ -184,7 +208,19 @@ namespace GK3DP1
                 Graphics.GraphicsDevice.DrawUserPrimitives<VertexPositionNormalTexture>(PrimitiveType.TriangleList, Station,
                                 0, 12);
             }
-            BasicEffect.Texture = SteelSeamlessTexture;
+            //BasicEffect.Texture = SteelSeamlessTexture;
+
+            //BasicEffect.World = world;
+            //BasicEffect.View = Camera.ViewMatrix;
+            //BasicEffect.Projection = Camera.ProjectionMatrix;
+            //foreach (EffectPass pass in BasicEffect.CurrentTechnique.
+            //        Passes)
+            //{
+            //    pass.Apply();
+            //    Graphics.GraphicsDevice.DrawUserPrimitives<VertexPositionNormalTexture>(PrimitiveType.TriangleList, Station,
+            //                    0, 12);
+            //}
+      
 
             foreach (EffectPass pass in SampleEffect.CurrentTechnique.
                    Passes)
