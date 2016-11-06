@@ -1,4 +1,4 @@
-﻿using GK3DP1.Objects;
+﻿
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
@@ -37,10 +37,13 @@ namespace GK3DP1
 
         private EffectParameter WorldParemeter;
         private EffectParameter ProjectionParameter;
-        private EffectParameter ViewParamter;
+        private EffectParameter ViewParameter;
+        private EffectParameter TextureParameter;
 
+        private Vector3[] LightPosition = new Vector3[2];
+        private Vector3[] LightColor = new Vector3 [2];
+    
 
-        private TestCube cubeTest;
 
 
         #endregion Globals
@@ -55,11 +58,19 @@ namespace GK3DP1
         {
             Robot = new Robot();
             Robot.Initialize(Content);
-            Robot2 = new Robot();
-            Robot2.Initialize(Content);
             InitializeEffects();
             Camera = new Camera(Graphics.GraphicsDevice);
-            //this.IsMouseVisible = true;
+
+            LightPosition[0] = new Vector3(5, -10, -25);
+            LightPosition[1] = new Vector3(5, -10, 25);
+
+            LightColor[0] = new Vector3(0f, 0, 1f);
+            LightColor[1] = new Vector3(1f, 0, 0f);
+
+
+           
+
+
             base.Initialize();
         }
 
@@ -78,11 +89,13 @@ namespace GK3DP1
             Model = Content.Load<Model>("robot");
             SampleEffect = Content.Load<Effect>("SampleEffect");
 
-
             ProjectionParameter = SampleEffect.Parameters["Projection"];
             WorldParemeter = SampleEffect.Parameters["World"];
-            ViewParamter = SampleEffect.Parameters["View"];
+            ViewParameter = SampleEffect.Parameters["View"];
+            TextureParameter = SampleEffect.Parameters["BasicTexture"];
 
+            SampleEffect.Parameters["LightColor"].SetValue(LightColor);
+            SampleEffect.Parameters["LightPosition"].SetValue(LightPosition);
             CreateCubes();
         }
 
@@ -96,12 +109,10 @@ namespace GK3DP1
             var railwayCube = new Cube(5, 5, 60, new Vector3(0.0f, -40.0f, 0.0f));
             RailWay = railwayCube.MakeCube();
 
-            var someSmallCube = new Cube(4, 2, 2, new Vector3(0, 0, 0));
+            var someSmallCube = new Cube(3, 0.5f,1, new Vector3(0, 0, 0));
             someCube = someSmallCube.MakeCube();
             Bench = new Bench(someSmallCube).Vertexes;
 
-            cubeTest = new TestCube(new Vector3(0, -5, 2), new Vector3(3, 3, 3));
-            cubeTest.ConstructCube();
             LoadTextures();
         }
 
@@ -142,64 +153,30 @@ namespace GK3DP1
             DrawStationWithEffect();
             // DrawBench(new Vector3(15, -25, 17),Matrix.CreateFromAxisAngle(Vector3.UnitY, MathHelper.ToRadians(90)));
             //  DrawBench(new Vector3(-10, -25, 17),Matrix.CreateFromAxisAngle(Vector3.UnitY, MathHelper.ToRadians(270)));
-            // Robot2.Draw(Camera, new Vector3(14, -15, 0));
-            // Robot2.Draw(Camera, new Vector3(10, -20, 0));
-            Robot.DrawWithEffect(Camera, new Vector3(0, -5, 0), SampleEffect);
-           // DrawStationWithEffect();
-            // DrawBenchSampleEffect(new Vector3(0, -10, 5));
-            DrawCubeSampleEffect(new Vector3(10, -5, 0));
+            Robot.DrawWithEffect(Camera, new Vector3(15, -22, -35), SampleEffect);
+            Robot.DrawWithEffect(Camera, new Vector3(-10, -22, 20), SampleEffect);
+            // DrawStationWithEffect();
+            DrawBenchSampleEffect(new Vector3(-10, -24, 58.5f));
+            DrawBenchSampleEffect(new Vector3(10, -24, 58.5f));
+
+            //DrawCubeSampleEffect(new Vector3(10, -10, 0));
 
             base.Draw(gameTime);
         }
 
-        private void DrawStation()
-        {
-            BasicEffect.View = Camera.ViewMatrix;
-            BasicEffect.Projection = Camera.ProjectionMatrix;
-            BasicEffect.World = Matrix.CreateTranslation(new Vector3(0.0f,15f,0.0f));
-            BasicEffect.Texture = ConcreteTexture;
-            RasterizerState rasterizerState = new RasterizerState();
-            rasterizerState.CullMode = CullMode.None;
-            GraphicsDevice.RasterizerState = rasterizerState;
-            foreach (EffectPass pass in BasicEffect.CurrentTechnique.
-                    Passes)
-            {
-                pass.Apply();
-                Graphics.GraphicsDevice.DrawUserPrimitives<VertexPositionNormalTexture>(PrimitiveType.TriangleList, Station,
-                                0, 12);
-            }
-            BasicEffect.Texture = SteelSeamlessTexture;
 
-            foreach (EffectPass pass in BasicEffect.CurrentTechnique.
-                   Passes)
-            {
-                pass.Apply();
-                Graphics.GraphicsDevice.DrawUserPrimitives<VertexPositionNormalTexture>(PrimitiveType.TriangleList, RailWay,
-                               0, 12);
-            }
-        }
         private void DrawStationWithEffect()
         {
-            BasicEffect.View = Camera.ViewMatrix;
-            BasicEffect.Projection = Camera.ProjectionMatrix;
-            BasicEffect.World = Matrix.CreateTranslation(new Vector3(0.0f, 15f, 0.0f));
-            BasicEffect.Texture = ConcreteTexture;
-
-
-
-
             RasterizerState rasterizerState = new RasterizerState();
             rasterizerState.CullMode = CullMode.None;
             GraphicsDevice.RasterizerState = rasterizerState;
             SampleEffect.Parameters["BasicTexture"].SetValue(SteelSeamlessTexture);
-            ViewParamter.SetValue(Camera.ViewMatrix);
+
+            ViewParameter.SetValue(Camera.ViewMatrix);
             ProjectionParameter.SetValue(Camera.ProjectionMatrix);
             Matrix world = Matrix.CreateTranslation(new Vector3(0.0f, 15f, 0.0f));
 
-            //Matrix worldInverseTransposeMatrix = Matrix.Transpose(Matrix.Invert(world));
-            //SampleEffect.Parameters["WorldInverseTranspose"].SetValue(worldInverseTransposeMatrix);
             WorldParemeter.SetValue(world);
-
             foreach (EffectPass pass in SampleEffect.CurrentTechnique.
                     Passes)
             {
@@ -221,39 +198,14 @@ namespace GK3DP1
 
 
 
-        private void DrawBench(Vector3 position, params Matrix[] matrices )
-        {
-            BasicEffect.View = Camera.ViewMatrix;
-            BasicEffect.Projection = Camera.ProjectionMatrix;
-
-            //BasicEffect.TextureEnabled = true;
-            BasicEffect.Texture = SteelnetTexture;
-
-            BasicEffect.World = Matrix.CreateTranslation(position);
-            foreach (Matrix m in matrices)
-            {
-                BasicEffect.World *= m;
-            }
-            
-
-            foreach (var pass in BasicEffect.CurrentTechnique.Passes)
-            {
-                pass.Apply();
-                Graphics.GraphicsDevice.DrawUserPrimitives<VertexPositionNormalTexture>(PrimitiveType.TriangleList, Bench,
-                                               0, 24);
-            }
-        }
+    
         private void DrawBenchSampleEffect(Vector3 position, params Matrix[] matrices)
         {
-            ViewParamter.SetValue(Camera.ViewMatrix);
+            ViewParameter.SetValue(Camera.ViewMatrix);
             ProjectionParameter.SetValue(Camera.ProjectionMatrix);
             Matrix world = Matrix.CreateTranslation(position);
 
-            Matrix worldInverseTransposeMatrix = Matrix.Transpose(Matrix.Invert(world));
-            SampleEffect.Parameters["WorldInverseTranspose"].SetValue(worldInverseTransposeMatrix);
-
-         //   SampleEffect.Parameters["BasicTexture"].SetValue(SteelSeamlessTexture);
-
+            TextureParameter.SetValue(SteelSeamlessTexture);
             WorldParemeter.SetValue( world);
             foreach (var pass in SampleEffect.CurrentTechnique.Passes)
             {
@@ -264,14 +216,11 @@ namespace GK3DP1
         }
         private void DrawCubeSampleEffect(Vector3 position, params Matrix[] matrices)
         {
-            ViewParamter.SetValue(Camera.ViewMatrix);
+            ViewParameter.SetValue(Camera.ViewMatrix);
             ProjectionParameter.SetValue(Camera.ProjectionMatrix);
             Matrix world = Matrix.CreateTranslation(position);
 
-            Matrix worldInverseTransposeMatrix = Matrix.Transpose(Matrix.Invert(world));
-            SampleEffect.Parameters["WorldInverseTranspose"].SetValue(worldInverseTransposeMatrix);
-
-            //   SampleEffect.Parameters["BasicTexture"].SetValue(SteelSeamlessTexture);
+              SampleEffect.Parameters["BasicTexture"].SetValue(SteelSeamlessTexture);
 
             WorldParemeter.SetValue(world);
             foreach (var pass in SampleEffect.CurrentTechnique.Passes)

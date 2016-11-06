@@ -7,14 +7,19 @@
 	#define PS_SHADERMODEL ps_4_0_level_9_1
 #endif
 
+
+#define NUMSPOTLIGHTS 2 
+
 float4x4 World;
 float4x4 View;
 float4x4 Projection;
 
 float3 AmbientLightColor = float3(.15, .15, .15);
 float3 DiffuseColor = float3(.85, .85, .85);
-float3 LightPosition = float3(0, 3, 0);
-float3 LightColor = float3(1, 1, 1);
+
+float3 LightPosition[NUMSPOTLIGHTS];
+float3 LightColor[NUMSPOTLIGHTS];
+
 float LightAttenuation = 5000;
 float LightFalloff = 2;
 float4x4 WorldInverseTranspose;
@@ -70,19 +75,25 @@ float4 PixelShaderFunction(VertexShaderOutput input) : COLOR0
 
 	if (TextureEnabled)
 		diffuseColor *= tex2D(BasicTextureSampler, input.UV).rgb;
+
+
 	float3 totalLight = float3(0, 0, 0);
   
 	totalLight += AmbientLightColor;
- 
-	float3 lightDir = normalize(LightPosition - input.WorldPosition);
-	float diffuse = saturate(dot(normalize(input.Normal), lightDir));
-	float d = distance(LightPosition, input.WorldPosition);
-	float att = 1 - pow(clamp(d / LightAttenuation, 0, 1),
+
+	for (int i = 0; i < NUMSPOTLIGHTS; i++)
+	{
+		float3 lightDir = normalize(LightPosition[i] - input.WorldPosition);
+		float diffuse = saturate(dot(normalize(input.Normal), lightDir));
+		float d = distance(LightPosition[i], input.WorldPosition);
+		float att = 1 - pow(clamp(d / LightAttenuation, 0, 1),
    LightFalloff);
+   
+		totalLight += diffuse * att * LightColor[i];
+	}
+	float3 output = saturate(totalLight) * diffuseColor;
 
-	totalLight += diffuse * att * LightColor;
-
-	return float4(diffuseColor * totalLight, 1);
+	return float4(output, 1);
 }
 
 technique Ambient

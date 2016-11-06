@@ -54,9 +54,9 @@ namespace GK3DP1
                         part.Effect = effect;
                         effect.Parameters["BasicTexture"].SetValue(texture);
                         Matrix world = Matrix.CreateTranslation(position);
-                        Matrix worldInverseTransposeMatrix = Matrix.Transpose(Matrix.Invert(mesh.ParentBone.Transform * world));
-                        effect.Parameters["WorldInverseTranspose"].SetValue(worldInverseTransposeMatrix);
-                        effect.Parameters["World"].SetValue(world * mesh.ParentBone.Transform);
+                        //Matrix worldInverseTransposeMatrix = Matrix.Transpose(Matrix.Invert(mesh.ParentBone.Transform * world));
+                        //effect.Parameters["WorldInverseTranspose"].SetValue(worldInverseTransposeMatrix);
+                        effect.Parameters["World"].SetValue(mesh.ParentBone.Transform * world);
                         effect.Parameters["View"].SetValue(camera.ViewMatrix);
                         effect.Parameters["Projection"].SetValue(camera.ProjectionMatrix);
                        // effect.Parameters["BasicTexture"].SetValue(part.Effect.Text);
