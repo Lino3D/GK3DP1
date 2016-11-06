@@ -43,11 +43,11 @@ namespace GK3DP1
         private Vector3[] LightPosition = new Vector3[4];
         private Vector3[] LightColor = new Vector3 [4];
 
-//        private Vector3[] LightPositionSpot = new Vector3[2];
-  //      private Vector3[] LightColorSpot = new Vector3[2];
         private Vector3[] LightDirectionSpot = new Vector3[4];
 
 
+        private float timer = 2;         //Initialize a 10 second timer
+        private const float TIMER = 2;
 
         #endregion Globals
 
@@ -108,6 +108,13 @@ namespace GK3DP1
             Model = Content.Load<Model>("robot");
             SampleEffect = Content.Load<Effect>("SampleEffect");
 
+            SetShaderParameters();
+
+            CreateCubes();
+        }
+
+        private void SetShaderParameters()
+        {
             ProjectionParameter = SampleEffect.Parameters["Projection"];
             WorldParemeter = SampleEffect.Parameters["World"];
             ViewParameter = SampleEffect.Parameters["View"];
@@ -116,11 +123,7 @@ namespace GK3DP1
             SampleEffect.Parameters["LightColor"].SetValue(LightColor);
             SampleEffect.Parameters["LightPosition"].SetValue(LightPosition);
 
-            // SampleEffect.Parameters["LightColorSpot"].SetValue(LightColorSpot);
-            //SampleEffect.Parameters["LightPositionSpot"].SetValue(LightPositionSpot);
             SampleEffect.Parameters["LightDirectionSpot"].SetValue(LightDirectionSpot);
-
-            CreateCubes();
         }
 
         private void CreateCubes()
@@ -163,7 +166,32 @@ namespace GK3DP1
             if (GamePad.GetState(PlayerIndex.One).Buttons.Back == ButtonState.Pressed || Keyboard.GetState().IsKeyDown(Keys.Escape))
                 Exit();
             Camera.Update(gameTime);
+
+            UpdateLight(gameTime);
+
             base.Update(gameTime);
+        }
+
+        private void UpdateLight(GameTime gameTime)
+        {
+            float elapsed = (float)gameTime.ElapsedGameTime.TotalSeconds;
+            timer -= elapsed;
+            if (timer < 0)
+            {
+                //Timer expired, execute action
+                   //Reset Timer
+                if (LightColor[1].Z == 1)
+                {
+                    LightColor[1] = new Vector3(0f, 1, 0f);
+                    SampleEffect.Parameters["LightColor"].SetValue(LightColor);
+                }
+                else
+                {
+                    LightColor[1] = new Vector3(0, 0, 1);
+                    SampleEffect.Parameters["LightColor"].SetValue(LightColor);
+                }
+                timer = TIMER;
+            }
         }
 
         /// <summary>
