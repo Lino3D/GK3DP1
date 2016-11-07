@@ -44,7 +44,6 @@
     <Compile Include="Objects\Cube.cs" />
     <Compile Include="Game1.cs" />
     <Compile Include="Objects\Robot.cs" />
-    <Compile Include="PointLightMaterial.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
