@@ -55,3 +55,9 @@
 /processorParam:DebugMode=Auto
 /build:SampleEffect.fx
 
+#begin spriteFont.spritefont
+/importer:FontDescriptionImporter
+/processor:FontDescriptionProcessor
+/processorParam:TextureFormat=Compressed
+/build:spriteFont.spritefont
+

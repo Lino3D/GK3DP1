@@ -10,7 +10,7 @@ namespace GK3DP1
         // in the ProjectionMatrix property.
         private GraphicsDevice graphicsDevice;
 
-        private Vector3 cameraPosition = new Vector3(4, 8, 5);
+        public Vector3 cameraPosition = new Vector3(4, 8, 5);
         private Vector3 cameraUp = Vector3.UnitY;
         private Vector3 cameraDirection;
 
@@ -36,6 +36,7 @@ namespace GK3DP1
                     fieldOfView, aspectRatio, nearClipPlane, farClipPlane);
             }
         }
+        
 
         public Camera(GraphicsDevice graphicsDevice)
         {

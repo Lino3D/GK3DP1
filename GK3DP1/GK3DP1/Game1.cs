@@ -40,6 +40,10 @@ namespace GK3DP1
         private EffectParameter ViewParameter;
         private EffectParameter TextureParameter;
 
+        private SpriteFont spriteFont;
+
+
+
         private Vector3[] LightPosition = new Vector3[4];
         private Vector3[] LightColor = new Vector3 [4];
 
@@ -48,13 +52,22 @@ namespace GK3DP1
 
         private float timer = 2;         //Initialize a 10 second timer
         private const float TIMER = 2;
+        private bool MenuModeOn = false;
+        private bool UseBasicEffectOn = false;
+
+        float MipMapDepthLevels = 0.0f;
+        bool MagFilterOn = false;
+        bool MipMapFilterOn = false;
+        private bool MultiSamplingOn;
 
         #endregion Globals
 
         public Game1()
         {
             Graphics = new GraphicsDeviceManager(this);
+           // Graphics.IsFullScreen = true;
             Content.RootDirectory = "Content";
+
         }
 
         protected override void Initialize()
@@ -63,6 +76,10 @@ namespace GK3DP1
             Robot.Initialize(Content);
             InitializeEffects();
             Camera = new Camera(Graphics.GraphicsDevice);
+            RasterizerState rasterizerState = new RasterizerState();
+            rasterizerState.CullMode = CullMode.None;
+            GraphicsDevice.RasterizerState = rasterizerState;
+            SetSamplerState();
 
             LightPosition[0] = new Vector3(10, 10, -25);
             LightPosition[1] = new Vector3(8, 10, 25);
@@ -83,6 +100,9 @@ namespace GK3DP1
 
             LightDirectionSpot[2] = new Vector3(0, -1f, 0);
             LightDirectionSpot[3] = new Vector3(0,  -1f, 0);
+
+
+
             base.Initialize();
         }
 
@@ -95,6 +115,12 @@ namespace GK3DP1
             BasicEffect.DirectionalLight0.DiffuseColor = new Vector3(0.5f, 0, 0); // a red light
             BasicEffect.DirectionalLight0.Direction = new Vector3(1, 0, 0);  // coming along the x-axis
             BasicEffect.DirectionalLight0.SpecularColor = new Vector3(0, 1, 0); // with green highlights
+
+
+            BasicEffect.FogEnabled = true;
+            BasicEffect.FogColor = Color.CornflowerBlue.ToVector3(); // For best results, ake this color whatever your background is.
+            BasicEffect.FogStart = 9.75f;
+            BasicEffect.FogEnd = 10.25f;
 
 
         }
@@ -148,12 +174,10 @@ namespace GK3DP1
             ConcreteTexture = Content.Load<Texture2D>("tex");
             SteelnetTexture = Content.Load<Texture2D>("steelnet");
             SteelSeamlessTexture = Content.Load<Texture2D>("steel");
+            spriteFont = Content.Load<SpriteFont>("spriteFont");
         }
 
-        /// <summary>
-        /// UnloadContent will be called once per game and is the place to unload
-        /// game-specific content.
-        /// </summary>
+  
         protected override void UnloadContent()
         {
             // TODO: Unload any non ContentManager content here
@@ -163,13 +187,84 @@ namespace GK3DP1
 
         protected override void Update(GameTime gameTime)
         {
+            KeyboardState keyState = Keyboard.GetState();
             if (GamePad.GetState(PlayerIndex.One).Buttons.Back == ButtonState.Pressed || Keyboard.GetState().IsKeyDown(Keys.Escape))
                 Exit();
-            Camera.Update(gameTime);
+            if (!MenuModeOn)
+            {
+                Camera.Update(gameTime);
+            }
+            if (keyState.IsKeyDown(Keys.G))
+            {
+                Graphics.PreferredBackBufferWidth = 1280;
+                Graphics.PreferredBackBufferHeight = 720;
+                this.Window.Position = new Point(0, 0);
+                Graphics.ApplyChanges();
+                Camera = new Camera(Graphics.GraphicsDevice);
+            }
+            if (keyState.IsKeyDown(Keys.K))
+            {
+                Graphics.PreferredBackBufferHeight = 1680;
+                Graphics.PreferredBackBufferWidth = 1050;
+                Graphics.ApplyChanges();
+                Camera = new Camera(Graphics.GraphicsDevice);
+            }
 
+            if (keyState.IsKeyDown(Keys.P))
+            {
+                UseBasicEffectOn = !UseBasicEffectOn;
+            }
+
+            if (keyState.IsKeyDown(Keys.M))
+            {
+                MultiSamplingOn = !MultiSamplingOn;
+
+            }
+
+            if (!keyState.IsKeyDown(Keys.OemMinus))
+                MipMapDepthLevels -= 0.03f;
+
+            if (!keyState.IsKeyDown(Keys.OemPlus))
+                MipMapDepthLevels += 0.03f;
+
+
+            if (keyState.IsKeyDown(Keys.B) )
+            {
+                MagFilterOn = !MagFilterOn;
+
+            }
+
+
+            if (Keyboard.GetState().IsKeyDown(Keys.N) )
+            {
+                MipMapFilterOn = !MipMapFilterOn;
+
+            }
+
+
+
+            EnterMenu(keyState);
             UpdateLight(gameTime);
 
             base.Update(gameTime);
+        }
+
+        private void EnterMenu(KeyboardState keyState)
+        {
+            if (keyState.IsKeyDown(Keys.X))
+            {
+                if (MenuModeOn == false)
+                {
+                    MenuModeOn = true;
+                    this.IsMouseVisible = true;
+                }
+                else
+                {
+                    MenuModeOn = false;
+                    this.IsMouseVisible = false;
+                }
+
+            }
         }
 
         private void UpdateLight(GameTime gameTime)
@@ -201,77 +296,141 @@ namespace GK3DP1
         protected override void Draw(GameTime gameTime)
         {
             GraphicsDevice.Clear(Color.CornflowerBlue);
+            GraphicsDevice.DepthStencilState = DepthStencilState.Default;
 
             DrawStationWithEffect();
-
+            SetSamplerState();
+            Graphics.PreferMultiSampling = MultiSamplingOn;
+           
             Robot.DrawWithEffect(Camera, new Vector3(15, -22, -35), SampleEffect);
-            Robot.DrawWithEffect(Camera, new Vector3(-10, -22, 20), SampleEffect);
-            // DrawStationWithEffect();
+           Robot.DrawWithEffect(Camera, new Vector3(-10, -22, 20), SampleEffect);
+
+          //  Robot.Draw(Camera, new Vector3(15, -22, -35));
+         //   Robot.Draw(Camera, new Vector3(-10, -22, 20));
+
             DrawBenchSampleEffect(new Vector3(-10, -24, 58.5f));
-            DrawBenchSampleEffect(new Vector3(10, -24, 58.5f));
+           DrawBenchSampleEffect(new Vector3(10, -24, 58.5f));
+            DrawCubeSampleEffect(new Vector3(5, -18, -40.5f));
 
-            //DrawCubeSampleEffect(new Vector3(10, -10, 0));
-
+            //  DrawHud();
             base.Draw(gameTime);
         }
 
 
+        private void DrawHud()
+        {
+            SpriteBatch.Begin();
+           // SpriteBatch.DrawString(spriteFont, "camPos:" + Camera.cameraPosition, new Vector2(10, 10), Color.White);
+            SpriteBatch.Draw(ConcreteTexture, Vector2.Zero, Color.White);
+            SpriteBatch.End();
+            //HudTexture is a transparent texture the size of the window/screen, with hud drawn onto it.
+          //  SpriteBatch.Begin();
+          
+         //   SpriteBatch.End();
+            //Let's say that it works well to draw your score at [100,100].
+
+            //   SpriteBatch.DrawString(SpriteFont, "100", new Vector2(100, 100), Color.White);
+        }
+        private void SetSamplerState()
+        {
+            // https://github.com/labnation/MonoGame/blob/master/Tools/2MGFX/SamplerStateInfo.cs
+
+            var ss = new SamplerState();
+
+            ss.Filter = TextureFilter.Point;
+            ss.MaxMipLevel = 0;
+            ss.AddressU = TextureAddressMode.Wrap;
+            ss.AddressV = TextureAddressMode.Wrap;
+            ss.MipMapLevelOfDetailBias = MipMapDepthLevels;
+            if (MagFilterOn && MipMapFilterOn)
+                ss.Filter = TextureFilter.Linear;
+            else if (!MagFilterOn && MipMapFilterOn)
+                ss.Filter = TextureFilter.PointMipLinear;
+            else if (MagFilterOn && !MipMapFilterOn)
+                ss.Filter = TextureFilter.LinearMipPoint;
+            else if (!MagFilterOn && !MipMapFilterOn)
+                ss.Filter = TextureFilter.Point;
+            GraphicsDevice.SamplerStates[0] = ss;
+
+        }
         private void DrawStationWithEffect()
         {
-            RasterizerState rasterizerState = new RasterizerState();
-            rasterizerState.CullMode = CullMode.None;
-            GraphicsDevice.RasterizerState = rasterizerState;
-            SampleEffect.Parameters["BasicTexture"].SetValue(SteelSeamlessTexture);
+           
 
-            ViewParameter.SetValue(Camera.ViewMatrix);
-            ProjectionParameter.SetValue(Camera.ProjectionMatrix);
+           
             Matrix world = Matrix.CreateTranslation(new Vector3(0.0f, 15f, 0.0f));
 
+            
+
+            //Parametry basic effectu
+            BasicEffect.Texture = SteelSeamlessTexture;
+            BasicEffect.World = world;
+            BasicEffect.View = Camera.ViewMatrix;
+            BasicEffect.Projection = Camera.ProjectionMatrix;
+
+
+            //Parametry Custom Effectu
+            ViewParameter.SetValue(Camera.ViewMatrix);
+            ProjectionParameter.SetValue(Camera.ProjectionMatrix);
+            SampleEffect.Parameters["BasicTexture"].SetValue(SteelSeamlessTexture);
 
             WorldParemeter.SetValue(world);
-            foreach (EffectPass pass in SampleEffect.CurrentTechnique.
+
+            Effect effect = BasicEffect;
+            if(!UseBasicEffectOn)
+            effect = SampleEffect;
+
+
+            foreach (EffectPass pass in effect.CurrentTechnique.
                     Passes)
             {
                 pass.Apply();
                 Graphics.GraphicsDevice.DrawUserPrimitives<VertexPositionNormalTexture>(PrimitiveType.TriangleList, Station,
                                 0, 12);
             }
-            //BasicEffect.Texture = SteelSeamlessTexture;
 
-            //BasicEffect.World = world;
-            //BasicEffect.View = Camera.ViewMatrix;
-            //BasicEffect.Projection = Camera.ProjectionMatrix;
-            //foreach (EffectPass pass in BasicEffect.CurrentTechnique.
-            //        Passes)
-            //{
-            //    pass.Apply();
-            //    Graphics.GraphicsDevice.DrawUserPrimitives<VertexPositionNormalTexture>(PrimitiveType.TriangleList, Station,
-            //                    0, 12);
-            //}
-      
-
-            foreach (EffectPass pass in SampleEffect.CurrentTechnique.
-                   Passes)
+            foreach (EffectPass pass in effect.CurrentTechnique.
+                  Passes)
             {
                 pass.Apply();
                 Graphics.GraphicsDevice.DrawUserPrimitives<VertexPositionNormalTexture>(PrimitiveType.TriangleList, RailWay,
                                0, 12);
             }
+
+
+
+
+
+        }
+
+        private void HandleFog(BasicEffect effect)
+        {
+           
         }
 
 
 
-
-    
         private void DrawBenchSampleEffect(Vector3 position, params Matrix[] matrices)
         {
+            Matrix world = Matrix.CreateTranslation(position);
+
+            BasicEffect.Texture = SteelSeamlessTexture;
+            BasicEffect.World = world;
+            BasicEffect.View = Camera.ViewMatrix;
+            BasicEffect.Projection = Camera.ProjectionMatrix;
+
             ViewParameter.SetValue(Camera.ViewMatrix);
             ProjectionParameter.SetValue(Camera.ProjectionMatrix);
-            Matrix world = Matrix.CreateTranslation(position);
+            
 
             TextureParameter.SetValue(SteelSeamlessTexture);
             WorldParemeter.SetValue( world);
-            foreach (var pass in SampleEffect.CurrentTechnique.Passes)
+
+            Effect effect = BasicEffect;
+            if (!UseBasicEffectOn)
+                effect = SampleEffect;
+
+            foreach (var pass in effect.CurrentTechnique.Passes)
             {
                 pass.Apply();
                 Graphics.GraphicsDevice.DrawUserPrimitives<VertexPositionNormalTexture>(PrimitiveType.TriangleList, Bench,

@@ -83,6 +83,7 @@
     <None Include="Content\SampleEffect.fx">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
+    <None Include="Content\spriteFont.spritefont" />
   </ItemGroup>
   <ItemGroup>
     <Folder Include="Content\bin\Windows\" />
