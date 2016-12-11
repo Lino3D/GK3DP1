@@ -2,6 +2,7 @@
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
+// ReSharper disable All
 
 namespace GK3DP1
 {
@@ -14,12 +15,16 @@ namespace GK3DP1
 
         private GraphicsDeviceManager Graphics;
         private SpriteBatch SpriteBatch;
+        private SpriteBatch MenuSprite;
+
         private BasicEffect BasicEffect;
 
         private Effect SampleEffect;
+        private Effect GaussianBlur;
+
 
         private Model Model;
-
+        private RenderTarget2D RenderTarget;
         //Geometric info
         // private VertexBuffer vertexBuffer;
 
@@ -27,6 +32,7 @@ namespace GK3DP1
         private VertexPositionNormalTexture[] RailWay;
         private VertexPositionNormalTexture[] someCube;
         private VertexPositionNormalTexture[] Bench;
+        private VertexPositionNormalTexture[] ProjectionCube;
 
         private Robot Robot;
         private Robot Robot2;
@@ -34,6 +40,8 @@ namespace GK3DP1
         private Texture2D ConcreteTexture;
         private Texture2D SteelnetTexture;
         private Texture2D SteelSeamlessTexture;
+        private Texture2D RenderedTexture;
+        private Texture2D MenuTexture;
 
         private EffectParameter WorldParemeter;
         private EffectParameter ProjectionParameter;
@@ -59,6 +67,13 @@ namespace GK3DP1
         bool MagFilterOn = false;
         bool MipMapFilterOn = false;
         private bool MultiSamplingOn;
+        private bool GaussianBlurOn;
+
+        private SpriteBatch renderTargetBatch;
+        private Rectangle FirstResolution = new Rectangle(5, 10, 40, 12);
+        private Rectangle SecondResolution = new Rectangle(5, 25, 40, 15);
+        private Rectangle ThirdResolution = new Rectangle(5, 40, 40, 12);
+        private Rectangle MultiSamplingRectange = new Rectangle(5,55,100,12);
 
         #endregion Globals
 
@@ -102,7 +117,13 @@ namespace GK3DP1
             LightDirectionSpot[3] = new Vector3(0,  -1f, 0);
 
 
-
+            RenderTarget = new RenderTarget2D(
+               GraphicsDevice,
+               GraphicsDevice.PresentationParameters.BackBufferWidth,
+               GraphicsDevice.PresentationParameters.BackBufferHeight,
+               false,
+               GraphicsDevice.PresentationParameters.BackBufferFormat,
+               DepthFormat.Depth24);
             base.Initialize();
         }
 
@@ -117,7 +138,7 @@ namespace GK3DP1
             BasicEffect.DirectionalLight0.SpecularColor = new Vector3(0, 1, 0); // with green highlights
 
 
-            BasicEffect.FogEnabled = true;
+            BasicEffect.FogEnabled = false;
             BasicEffect.FogColor = Color.CornflowerBlue.ToVector3(); // For best results, ake this color whatever your background is.
             BasicEffect.FogStart = 9.75f;
             BasicEffect.FogEnd = 10.25f;
@@ -125,14 +146,14 @@ namespace GK3DP1
 
         }
 
-        /// <summary>
-        /// LoadContent will be called once per game and is the place to load
-        /// all of your content.
-        /// </summary>
+
         protected override void LoadContent()
         {
             Model = Content.Load<Model>("robot");
             SampleEffect = Content.Load<Effect>("SampleEffect");
+            GaussianBlur = Content.Load<Effect>("GaussianBlur");
+          
+            renderTargetBatch = new SpriteBatch(GraphicsDevice);
 
             SetShaderParameters();
 
@@ -165,6 +186,8 @@ namespace GK3DP1
             var someSmallCube = new Cube(3, 0.5f,1, new Vector3(0, 0, 0));
             someCube = someSmallCube.MakeCube();
             Bench = new Bench(someSmallCube).Vertexes;
+            var cube2 = new Cube(1.0f, 1.0f, 1.0f, new Vector3(0, 0, 0));
+            ProjectionCube = cube2.MakeCube();
 
             LoadTextures();
         }
@@ -175,6 +198,9 @@ namespace GK3DP1
             SteelnetTexture = Content.Load<Texture2D>("steelnet");
             SteelSeamlessTexture = Content.Load<Texture2D>("steel");
             spriteFont = Content.Load<SpriteFont>("spriteFont");
+            MenuTexture = Content.Load<Texture2D>("Menu");
+            MenuSprite = new SpriteBatch(GraphicsDevice);
+
         }
 
   
@@ -185,15 +211,49 @@ namespace GK3DP1
 
 
 
+        private void SetResolution(int Width, int Height)
+        {
+            Graphics.PreferredBackBufferWidth = Width;
+            Graphics.PreferredBackBufferHeight = Height;
+            this.Window.Position = new Point(0, 0);
+            Graphics.ApplyChanges();
+            Camera = new Camera(Graphics.GraphicsDevice);
+        }
+
+
+
         protected override void Update(GameTime gameTime)
         {
             KeyboardState keyState = Keyboard.GetState();
+            MouseState mouseState = Mouse.GetState();
+            MouseState prevMouseState = new MouseState();
             if (GamePad.GetState(PlayerIndex.One).Buttons.Back == ButtonState.Pressed || Keyboard.GetState().IsKeyDown(Keys.Escape))
                 Exit();
             if (!MenuModeOn)
             {
                 Camera.Update(gameTime);
             }
+
+            if (MenuModeOn)
+            {
+                if (mouseState.LeftButton == ButtonState.Pressed && prevMouseState.LeftButton == ButtonState.Released)
+                {
+        
+                    Point mousePos = new Point(mouseState.X, mouseState.Y);
+                    if (FirstResolution.Contains(mousePos))
+                    {
+                        SetResolution(1440,900);
+                    }
+                    else if(SecondResolution.Contains(mousePos))
+                        SetResolution(1920,1080);
+                    else if(ThirdResolution.Contains(mousePos))
+                        SetResolution(1900,1200);
+                    else if (MultiSamplingRectange.Contains(mousePos))
+                        MultiSamplingOn = !MultiSamplingOn;
+                }
+                prevMouseState = mouseState;
+            }
+
             if (keyState.IsKeyDown(Keys.G))
             {
                 Graphics.PreferredBackBufferWidth = 1280;
@@ -239,6 +299,10 @@ namespace GK3DP1
             {
                 MipMapFilterOn = !MipMapFilterOn;
 
+            }
+            if (keyState.IsKeyDown(Keys.B))
+            {
+                GaussianBlurOn = !GaussianBlurOn;
             }
 
 
@@ -289,33 +353,64 @@ namespace GK3DP1
             }
         }
 
-        /// <summary>
-        /// This is called when the game should draw itself.
-        /// </summary>
-        /// <param name="gameTime">Provides a snapshot of timing values.</param>
-        protected override void Draw(GameTime gameTime)
+         protected override void Draw(GameTime gameTime)
         {
-            GraphicsDevice.Clear(Color.CornflowerBlue);
-            GraphicsDevice.DepthStencilState = DepthStencilState.Default;
 
-            DrawStationWithEffect();
+            GraphicsDevice.DepthStencilState = DepthStencilState.Default;
+            DrawToTexture(gameTime);
+
             SetSamplerState();
             Graphics.PreferMultiSampling = MultiSamplingOn;
-           
-            Robot.DrawWithEffect(Camera, new Vector3(15, -22, -35), SampleEffect);
-           Robot.DrawWithEffect(Camera, new Vector3(-10, -22, 20), SampleEffect);
 
-          //  Robot.Draw(Camera, new Vector3(15, -22, -35));
-         //   Robot.Draw(Camera, new Vector3(-10, -22, 20));
+            DrawObjects();
 
-            DrawBenchSampleEffect(new Vector3(-10, -24, 58.5f));
-           DrawBenchSampleEffect(new Vector3(10, -24, 58.5f));
-            DrawCubeSampleEffect(new Vector3(5, -18, -40.5f));
+            if(GaussianBlurOn)
+            DrawGaussianBlur();
 
-            //  DrawHud();
+            if(MenuModeOn)
+             DrawMenu();
             base.Draw(gameTime);
         }
 
+        private void DrawGaussianBlur()
+        {
+            renderTargetBatch.Begin(SpriteSortMode.Immediate, BlendState.AlphaBlend,
+                SamplerState.LinearClamp, DepthStencilState.Default,
+                RasterizerState.CullNone, GaussianBlur);
+
+            renderTargetBatch.Draw(RenderTarget, destinationRectangle: new Rectangle(0, 0, 400, 400), color: Color.White);
+            renderTargetBatch.End();
+        }
+
+        protected void DrawToTexture(GameTime gameTime)
+        {
+            
+            GraphicsDevice.SetRenderTarget(RenderTarget);
+            //GraphicsDevice.DepthStencilState = new DepthStencilState() { DepthBufferEnable = true };
+
+            // Draw the scene
+          
+            //   GraphicsDevice.Clear(Color.CornflowerBlue);
+            DrawObjects();
+            RenderedTexture = RenderTarget;
+            GraphicsDevice.SetRenderTarget(null);
+        }
+
+
+        private void DrawObjects()
+        {
+            GraphicsDevice.Clear(Color.CornflowerBlue);
+            DrawStationWithEffect();
+            Robot.DrawWithEffect(Camera, new Vector3(15, -22, -35), SampleEffect);
+            Robot.DrawWithEffect(Camera, new Vector3(-10, -22, 20), SampleEffect);
+
+            //  Robot.Draw(Camera, new Vector3(15, -22, -35));
+            //   Robot.Draw(Camera, new Vector3(-10, -22, 20));
+
+            DrawBenchSampleEffect(new Vector3(-10, -24, 58.5f));
+            DrawBenchSampleEffect(new Vector3(10, -24, 58.5f));
+            DrawCubeSampleEffect(new Vector3(2, -10, -20.5f));
+        }
 
         private void DrawHud()
         {
@@ -330,6 +425,18 @@ namespace GK3DP1
             //Let's say that it works well to draw your score at [100,100].
 
             //   SpriteBatch.DrawString(SpriteFont, "100", new Vector2(100, 100), Color.White);
+        }
+        private void DrawMenu()
+        {
+      
+            MenuSprite.Begin();
+            MenuSprite.Draw(MenuTexture, new Vector2(-2, -47), Color.White * 0.5f);
+            MenuSprite.DrawString(spriteFont, "1440x900", new Vector2(5, 10), Color.White);
+            MenuSprite.DrawString(spriteFont, "1920x1080", new Vector2(5, 25), Color.White);
+            MenuSprite.DrawString(spriteFont, "1900x1200", new Vector2(5, 40), Color.White);
+            MenuSprite.DrawString(spriteFont, "MultiSampling: " + MultiSamplingOn.ToString(), new Vector2(5, 55), Color.White);
+
+            MenuSprite.End();
         }
         private void SetSamplerState()
         {
@@ -355,12 +462,11 @@ namespace GK3DP1
         }
         private void DrawStationWithEffect()
         {
-           
+            RasterizerState rasterizerState = new RasterizerState();
+            rasterizerState.CullMode = CullMode.None;
+            GraphicsDevice.RasterizerState = rasterizerState;
 
-           
             Matrix world = Matrix.CreateTranslation(new Vector3(0.0f, 15f, 0.0f));
-
-            
 
             //Parametry basic effectu
             BasicEffect.Texture = SteelSeamlessTexture;
@@ -403,13 +509,6 @@ namespace GK3DP1
 
         }
 
-        private void HandleFog(BasicEffect effect)
-        {
-           
-        }
-
-
-
         private void DrawBenchSampleEffect(Vector3 position, params Matrix[] matrices)
         {
             Matrix world = Matrix.CreateTranslation(position);
@@ -442,14 +541,27 @@ namespace GK3DP1
             ViewParameter.SetValue(Camera.ViewMatrix);
             ProjectionParameter.SetValue(Camera.ProjectionMatrix);
             Matrix world = Matrix.CreateTranslation(position);
-
-              SampleEffect.Parameters["BasicTexture"].SetValue(SteelSeamlessTexture);
+   
+            BasicEffect.Texture = SteelSeamlessTexture;
+            BasicEffect.World = world;
+            BasicEffect.View = Camera.ViewMatrix;
+            BasicEffect.Projection = Camera.ProjectionMatrix;
+            if (RenderedTexture != null)
+            {
+                SampleEffect.Parameters["BasicTexture"].SetValue(RenderedTexture);
+                BasicEffect.Texture = RenderedTexture;
+            }
+            else
+            {
+                BasicEffect.Texture = SteelSeamlessTexture;
+            }
+          
 
             WorldParemeter.SetValue(world);
-            foreach (var pass in SampleEffect.CurrentTechnique.Passes)
+            foreach (var pass in BasicEffect.CurrentTechnique.Passes)
             {
                 pass.Apply();
-                Graphics.GraphicsDevice.DrawUserPrimitives<VertexPositionNormalTexture>(PrimitiveType.TriangleList, someCube,
+                Graphics.GraphicsDevice.DrawUserPrimitives<VertexPositionNormalTexture>(PrimitiveType.TriangleList, ProjectionCube,
                                                0, 12);
             }
         }

@@ -64,6 +64,7 @@
     <Content Include="Content\D3DCompiler_43.dll">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
+    <Content Include="Content\Menu.png" />
     <Content Include="Content\steel.jpg">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
@@ -76,6 +77,7 @@
     <MonoGameContentReference Include="Content\Content.mgcb">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </MonoGameContentReference>
+    <None Include="Content\GaussianBlur.fx" />
     <None Include="Content\robot.xnb">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
