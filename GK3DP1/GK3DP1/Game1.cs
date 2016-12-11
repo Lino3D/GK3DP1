@@ -171,7 +171,7 @@ namespace GK3DP1
 
         private void LoadTextures()
         {
-            ConcreteTexture = Content.Load<Texture2D>("tex");
+            //ConcreteTexture = Content.Load<Texture2D>("tex");
             SteelnetTexture = Content.Load<Texture2D>("steelnet");
             SteelSeamlessTexture = Content.Load<Texture2D>("steel");
             spriteFont = Content.Load<SpriteFont>("spriteFont");
