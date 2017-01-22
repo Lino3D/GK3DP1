@@ -44,6 +44,7 @@
     <Compile Include="Objects\Cube.cs" />
     <Compile Include="Game1.cs" />
     <Compile Include="Objects\Robot.cs" />
+    <Compile Include="Objects\Sphere.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
@@ -78,6 +79,9 @@
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </MonoGameContentReference>
     <None Include="Content\GaussianBlur.fx" />
+    <None Include="Content\GlassEffect.fx">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
     <None Include="Content\robot.xnb">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>

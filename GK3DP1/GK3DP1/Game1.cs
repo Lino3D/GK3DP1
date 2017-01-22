@@ -1,4 +1,5 @@
 ﻿
+using GK3DP1.Objects;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
@@ -21,6 +22,7 @@ namespace GK3DP1
 
         private Effect SampleEffect;
         private Effect GaussianBlur;
+        private Effect GlassEffect;
 
 
         private Model Model;
@@ -33,6 +35,7 @@ namespace GK3DP1
         private VertexPositionNormalTexture[] someCube;
         private VertexPositionNormalTexture[] Bench;
         private VertexPositionNormalTexture[] ProjectionCube;
+        private Sphere Ball;
 
         private Robot Robot;
         private Robot Robot2;
@@ -75,6 +78,14 @@ namespace GK3DP1
         private Rectangle ThirdResolution = new Rectangle(5, 40, 40, 12);
         private Rectangle MultiSamplingRectange = new Rectangle(5,55,100,12);
 
+
+        RenderTargetCube RefCubeMap;
+
+
+        Texture2D EnvironmentMap;
+        TextureCube EnvironmentCube;
+ 
+
         #endregion Globals
 
         public Game1()
@@ -94,7 +105,7 @@ namespace GK3DP1
             RasterizerState rasterizerState = new RasterizerState();
             rasterizerState.CullMode = CullMode.None;
             GraphicsDevice.RasterizerState = rasterizerState;
-            SetSamplerState();
+            //SetSamplerState();
 
             LightPosition[0] = new Vector3(10, 10, -25);
             LightPosition[1] = new Vector3(8, 10, 25);
@@ -103,10 +114,10 @@ namespace GK3DP1
             LightPosition[3] = new Vector3(-45, 0, -15);
 
             LightColor[0] = new Vector3(1f, 1, 1f);
-            LightColor[1] = new Vector3(0f, 1, 0f);
-            LightColor[2] = new Vector3(0f, 0, 1f);
+            LightColor[1] = new Vector3(1f, 1, 1f);
+            LightColor[2] = new Vector3(1f, 1f, 1f);
 
-            LightColor[3] = new Vector3(1.0f, 0f,0);
+            LightColor[3] = new Vector3(1.0f, 1.0f,1.0f);
 
         
 
@@ -124,18 +135,23 @@ namespace GK3DP1
                false,
                GraphicsDevice.PresentationParameters.BackBufferFormat,
                DepthFormat.Depth24);
+
+           // RefCubeMap = new RenderTargetCube(this.GraphicsDevice, 256, 1, SurfaceFormat.Color);
+
+            RefCubeMap = new RenderTargetCube(this.GraphicsDevice, 256, true, SurfaceFormat.Color, DepthFormat.Depth16, 1, RenderTargetUsage.PreserveContents);
             base.Initialize();
         }
 
         private void InitializeEffects()
         {
             BasicEffect = new BasicEffect(GraphicsDevice);
-            BasicEffect.TextureEnabled = true;
-            BasicEffect.EnableDefaultLighting();
-            BasicEffect.LightingEnabled = true; // turn on the lighting subsystem.
-            BasicEffect.DirectionalLight0.DiffuseColor = new Vector3(0.5f, 0, 0); // a red light
-            BasicEffect.DirectionalLight0.Direction = new Vector3(1, 0, 0);  // coming along the x-axis
-            BasicEffect.DirectionalLight0.SpecularColor = new Vector3(0, 1, 0); // with green highlights
+            BasicEffect.TextureEnabled = false;
+            //BasicEffect.TextureEnabled = true;
+            //BasicEffect.EnableDefaultLighting();
+            //BasicEffect.LightingEnabled = true; // turn on the lighting subsystem.
+            //BasicEffect.DirectionalLight0.DiffuseColor = new Vector3(0.5f, 0, 0); // a red light
+            //BasicEffect.DirectionalLight0.Direction = new Vector3(1, 0, 0);  // coming along the x-axis
+            //BasicEffect.DirectionalLight0.SpecularColor = new Vector3(0, 1, 0); // with green highlights
 
 
             BasicEffect.FogEnabled = false;
@@ -152,6 +168,7 @@ namespace GK3DP1
             Model = Content.Load<Model>("robot");
             SampleEffect = Content.Load<Effect>("SampleEffect");
             GaussianBlur = Content.Load<Effect>("GaussianBlur");
+            GlassEffect = Content.Load<Effect>("GlassEffect");
           
             renderTargetBatch = new SpriteBatch(GraphicsDevice);
 
@@ -171,6 +188,9 @@ namespace GK3DP1
             SampleEffect.Parameters["LightPosition"].SetValue(LightPosition);
 
             SampleEffect.Parameters["LightDirectionSpot"].SetValue(LightDirectionSpot);
+
+
+            
         }
 
         private void CreateCubes()
@@ -188,6 +208,8 @@ namespace GK3DP1
             Bench = new Bench(someSmallCube).Vertexes;
             var cube2 = new Cube(1.0f, 1.0f, 1.0f, new Vector3(0, 0, 0));
             ProjectionCube = cube2.MakeCube();
+
+            Ball = new Sphere(5, this.GraphicsDevice);
 
             LoadTextures();
         }
@@ -359,6 +381,8 @@ namespace GK3DP1
             GraphicsDevice.DepthStencilState = DepthStencilState.Default;
             DrawToTexture(gameTime);
 
+
+
             SetSamplerState();
             Graphics.PreferMultiSampling = MultiSamplingOn;
 
@@ -370,6 +394,87 @@ namespace GK3DP1
             if(MenuModeOn)
              DrawMenu();
             base.Draw(gameTime);
+        }
+
+        private void DoTheCubeMapThingy()
+        {
+            Matrix viewMatrix;
+
+            CubeMapFace cubeMapFace = CubeMapFace.NegativeX;
+
+
+
+            Matrix world = Matrix.CreateTranslation(new Vector3(15, -22, -35));
+            GlassEffect.Parameters["World"].SetValue(world);
+           
+            GlassEffect.Parameters["Projection"].SetValue(Camera.ProjectionMatrix);
+
+            for (int i = 0; i < 6; i++)
+            {
+                // render the scene to all cubemap faces
+                cubeMapFace = (CubeMapFace) i;
+               // GlassEffect.Parameters["View"].SetValue(Camera.ViewMatrix);
+                switch (cubeMapFace)
+                {
+                    case CubeMapFace.NegativeX:
+                    {
+                        viewMatrix = Matrix.CreateLookAt(Vector3.Zero, Vector3.Left, Vector3.Up);
+                            this.GraphicsDevice.SetRenderTarget(RefCubeMap, cubeMapFace);
+                            this.GraphicsDevice.Clear(Color.White);
+                            GlassEffect.Parameters["View"].SetValue(viewMatrix);
+                            GraphicsDevice.SetRenderTarget(null);
+                            break;
+                    }
+                    case CubeMapFace.NegativeY:
+                    {
+                            viewMatrix = Matrix.CreateLookAt(Vector3.Zero, Vector3.Down, Vector3.Forward);
+                            this.GraphicsDevice.SetRenderTarget(RefCubeMap, cubeMapFace);
+                            this.GraphicsDevice.Clear(Color.White);
+                            GlassEffect.Parameters["View"].SetValue(viewMatrix);
+                            GraphicsDevice.SetRenderTarget(null);
+                            break;
+                    }
+                    case CubeMapFace.NegativeZ:
+                    {
+                            viewMatrix = Matrix.CreateLookAt(Vector3.Zero, Vector3.Backward, Vector3.Up);
+                            this.GraphicsDevice.SetRenderTarget(RefCubeMap, cubeMapFace);
+                            this.GraphicsDevice.Clear(Color.White);
+                           GlassEffect.Parameters["View"].SetValue(viewMatrix);
+                            GraphicsDevice.SetRenderTarget(null);
+                            break;
+                    }
+                    case CubeMapFace.PositiveX:
+                    {
+                            viewMatrix = Matrix.CreateLookAt(Vector3.Zero, Vector3.Right, Vector3.Up);
+                            this.GraphicsDevice.SetRenderTarget(RefCubeMap, cubeMapFace);
+                            this.GraphicsDevice.Clear(Color.White);
+                            GlassEffect.Parameters["View"].SetValue(viewMatrix);
+                            GraphicsDevice.SetRenderTarget(null);
+                            break;
+                    }
+                    case CubeMapFace.PositiveY:
+                    {
+                            viewMatrix = Matrix.CreateLookAt(Vector3.Zero, Vector3.Up, Vector3.Backward);
+                            this.GraphicsDevice.SetRenderTarget(RefCubeMap, cubeMapFace);
+                            this.GraphicsDevice.Clear(Color.White);
+                            GlassEffect.Parameters["View"].SetValue(viewMatrix);
+                            GraphicsDevice.SetRenderTarget(null);
+                            break;
+                    }
+                    case CubeMapFace.PositiveZ:
+                    {
+                            viewMatrix = Matrix.CreateLookAt(Vector3.Zero, Vector3.Forward, Vector3.Up);
+                            this.GraphicsDevice.SetRenderTarget(RefCubeMap, cubeMapFace);
+                            this.GraphicsDevice.Clear(Color.White);
+                            GlassEffect.Parameters["View"].SetValue(viewMatrix);
+                            GraphicsDevice.SetRenderTarget(null);
+                            break;
+                    }
+                }
+            }
+       
+            // Set the cubemap render target, using the selected face
+          
         }
 
         private void DrawGaussianBlur()
@@ -400,16 +505,26 @@ namespace GK3DP1
         private void DrawObjects()
         {
             GraphicsDevice.Clear(Color.CornflowerBlue);
+
+
             DrawStationWithEffect();
-            Robot.DrawWithEffect(Camera, new Vector3(15, -22, -35), SampleEffect);
-            Robot.DrawWithEffect(Camera, new Vector3(-10, -22, 20), SampleEffect);
-
-            //  Robot.Draw(Camera, new Vector3(15, -22, -35));
-            //   Robot.Draw(Camera, new Vector3(-10, -22, 20));
-
             DrawBenchSampleEffect(new Vector3(-10, -24, 58.5f));
             DrawBenchSampleEffect(new Vector3(10, -24, 58.5f));
             DrawCubeSampleEffect(new Vector3(2, -10, -20.5f));
+
+            DoTheCubeMapThingy();
+            this.EnvironmentMap = RenderTarget;
+            //this.EnvironmentCube = RefCubeMap;
+            GlassEffect.Parameters["ReflectionCubeMap"].SetValue(EnvironmentMap);
+          
+            GraphicsDevice.SetRenderTarget(null);
+            Robot.DrawGlassRobot(Camera, new Vector3(0, 0, 0), GlassEffect);
+            DrawStationWithEffect();
+            DrawBenchSampleEffect(new Vector3(-10, -24, 58.5f));
+            DrawBenchSampleEffect(new Vector3(10, -24, 58.5f));
+            DrawCubeSampleEffect(new Vector3(2, -10, -20.5f));
+
+          //  DrawBall(new Vector3(0, -5, 0));
         }
 
         private void DrawHud()
@@ -502,11 +617,6 @@ namespace GK3DP1
                 Graphics.GraphicsDevice.DrawUserPrimitives<VertexPositionNormalTexture>(PrimitiveType.TriangleList, RailWay,
                                0, 12);
             }
-
-
-
-
-
         }
 
         private void DrawBenchSampleEffect(Vector3 position, params Matrix[] matrices)
@@ -563,6 +673,26 @@ namespace GK3DP1
                 pass.Apply();
                 Graphics.GraphicsDevice.DrawUserPrimitives<VertexPositionNormalTexture>(PrimitiveType.TriangleList, ProjectionCube,
                                                0, 12);
+            }
+        }
+        private void DrawBall(Vector3 position, params Matrix[] matrices)
+        {
+            ViewParameter.SetValue(Camera.ViewMatrix);
+            ProjectionParameter.SetValue(Camera.ProjectionMatrix);
+            Matrix world = Matrix.CreateTranslation(position);
+
+            BasicEffect.World = world;
+            BasicEffect.View = Camera.ViewMatrix;
+            BasicEffect.Projection = Camera.ProjectionMatrix;
+
+            BasicEffect.TextureEnabled = false;
+
+
+            foreach (var pass in BasicEffect.CurrentTechnique.Passes)
+            {
+                pass.Apply();
+                Graphics.GraphicsDevice.DrawUserIndexedPrimitives<VertexPositionColor>(PrimitiveType.TriangleList, Ball.vertices, 0, Ball.nvertices, 
+                    Ball.indices, 0, Ball.indices.Length / 3);
             }
         }
     }

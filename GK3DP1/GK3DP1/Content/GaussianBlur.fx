@@ -47,20 +47,7 @@ float BlurWeights[13] =
 
 float4 PixelShaderFunction(float2 TextureCoordinate : TEXCOORD0) : SV_TARGET0
 {
-    // Pixel width
-    //float pixelWidth = 1.0f;
 
-    //float4 color = { 0, 0, 0, 1 };
-    //float2 blur = TextureCoordinate;
-    //blur.y = TextureCoordinate.y;
-
-    //for (int i = 0; i < 13; i++)
-    //{
-    //    blur.x = TextureCoordinate.x + Pixels[i] * pixelWidth;
-    //    color += tex2D(TextureSampler, blur.xy) * BlurWeights[i];
-    //}
-
-    //return color;
     float4 tex;
     tex = myTex2D.Sample(TextureSampler, TextureCoordinate.xy) * .6f;
     tex += myTex2D.Sample(TextureSampler, TextureCoordinate.xy + (0.005)) * .2f;

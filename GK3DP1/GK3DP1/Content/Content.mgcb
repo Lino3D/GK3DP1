@@ -79,3 +79,9 @@
 /processorParam:TextureFormat=Color
 /build:Menu.png
 
+#begin GlassEffect.fx
+/importer:EffectImporter
+/processor:EffectProcessor
+/processorParam:DebugMode=Auto
+/build:GlassEffect.fx
+

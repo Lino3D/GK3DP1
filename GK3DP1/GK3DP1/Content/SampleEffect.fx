@@ -16,6 +16,7 @@ float4x4 World;
 float4x4 View;
 float4x4 Projection;
 
+
 float3 AmbientLightColor = float3(.15, .15, .15);
 float3 DiffuseColor = float3(.85, .85, .85);
 
@@ -133,15 +134,3 @@ technique Ambient
 }
 
 
-
-    //for (int j = 0; j < NUMSPOTLIGHTS; j++)
-    //{
-    //     lightDir = normalize(LightPositionSpot[j] - input.WorldPosition);
-    //     diffuse = saturate(dot(normalize(input.Normal), lightDir));
-        
-    //     att = 0;
-    //  //  if (a < d)
-    //        att = 1 - pow(clamp(a / d, 0, 1), LightFalloff);
-
-    //    totalLight += diffuse * att * LightColorSpot[j];
-    //}

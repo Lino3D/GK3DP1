@@ -28,8 +28,9 @@ namespace GK3DP1
         {
             foreach (var mesh in model.Meshes)
             {
-                foreach (BasicEffect effect in mesh.Effects.Where(x => x.GetType()==typeof(BasicEffect)))
+                foreach (var effect1 in mesh.Effects.Where(x => x.GetType()==typeof(BasicEffect)))
                 {
+                    var effect = (BasicEffect) effect1;
                     effect.EnableDefaultLighting();
                     effect.PreferPerPixelLighting = true;
 
@@ -52,18 +53,39 @@ namespace GK3DP1
                     foreach (ModelMeshPart part in mesh.MeshParts)
                     {
                         part.Effect = effect;
-                        effect.Parameters["BasicTexture"].SetValue(texture);
+                      
                         Matrix world = Matrix.CreateTranslation(position);
                         //Matrix worldInverseTransposeMatrix = Matrix.Transpose(Matrix.Invert(mesh.ParentBone.Transform * world));
                         //effect.Parameters["WorldInverseTranspose"].SetValue(worldInverseTransposeMatrix);
                         effect.Parameters["World"].SetValue(mesh.ParentBone.Transform * world);
                         effect.Parameters["View"].SetValue(camera.ViewMatrix);
                         effect.Parameters["Projection"].SetValue(camera.ProjectionMatrix);
-                       // effect.Parameters["BasicTexture"].SetValue(part.Effect.Text);
+                        effect.Parameters["BasicTexture"].SetValue(texture);
+                     //effect.Parameters["BasicTexture"].SetValue(part.Effect.te);
                 }
                     mesh.Draw();
                 
               
+            }
+        }
+        public void DrawGlassRobot(Camera camera, Vector3 position, Effect effect)
+        {
+            foreach (var mesh in model.Meshes)
+            {
+
+                foreach (ModelMeshPart part in mesh.MeshParts)
+                {
+                    part.Effect = effect;
+
+                    Matrix world = Matrix.CreateTranslation(position);
+                    effect.Parameters["World"].SetValue(mesh.ParentBone.Transform * world);
+                    effect.Parameters["View"].SetValue(camera.ViewMatrix);
+                    effect.Parameters["Projection"].SetValue(camera.ProjectionMatrix);
+  
+                }
+                mesh.Draw();
+
+
             }
         }
 
