@@ -24,6 +24,8 @@ namespace GK3DP1
         private Effect GaussianBlur;
         private Effect GlassEffect;
 
+        private Effect BallEffect;
+
 
         private Model Model;
         private RenderTarget2D RenderTarget;
@@ -169,6 +171,7 @@ namespace GK3DP1
             SampleEffect = Content.Load<Effect>("SampleEffect");
             GaussianBlur = Content.Load<Effect>("GaussianBlur");
             GlassEffect = Content.Load<Effect>("GlassEffect");
+            BallEffect = Content.Load<Effect>("custom");
           
             renderTargetBatch = new SpriteBatch(GraphicsDevice);
 
@@ -209,7 +212,7 @@ namespace GK3DP1
             var cube2 = new Cube(1.0f, 1.0f, 1.0f, new Vector3(0, 0, 0));
             ProjectionCube = cube2.MakeCube();
 
-            Ball = new Sphere(5, this.GraphicsDevice);
+            Ball = new Sphere(3, this.GraphicsDevice);
 
             LoadTextures();
         }
@@ -511,7 +514,7 @@ namespace GK3DP1
             DrawBenchSampleEffect(new Vector3(-10, -24, 58.5f));
             DrawBenchSampleEffect(new Vector3(10, -24, 58.5f));
             DrawCubeSampleEffect(new Vector3(2, -10, -20.5f));
-
+            DrawBall(new Vector3(0, -15, -16));
             DoTheCubeMapThingy();
             this.EnvironmentMap = RenderTarget;
             //this.EnvironmentCube = RefCubeMap;
@@ -524,7 +527,7 @@ namespace GK3DP1
             DrawBenchSampleEffect(new Vector3(10, -24, 58.5f));
             DrawCubeSampleEffect(new Vector3(2, -10, -20.5f));
 
-          //  DrawBall(new Vector3(0, -5, 0));
+            DrawBall(new Vector3(0, -15, -16));
         }
 
         private void DrawHud()
@@ -681,14 +684,11 @@ namespace GK3DP1
             ProjectionParameter.SetValue(Camera.ProjectionMatrix);
             Matrix world = Matrix.CreateTranslation(position);
 
-            BasicEffect.World = world;
-            BasicEffect.View = Camera.ViewMatrix;
-            BasicEffect.Projection = Camera.ProjectionMatrix;
+            var WorldViewProjection = world*Camera.ViewMatrix*Camera.ProjectionMatrix;
 
-            BasicEffect.TextureEnabled = false;
-
-
-            foreach (var pass in BasicEffect.CurrentTechnique.Passes)
+            BallEffect.Parameters["WorldViewProjection"].SetValue(WorldViewProjection);
+       
+            foreach (var pass in BallEffect.CurrentTechnique.Passes)
             {
                 pass.Apply();
                 Graphics.GraphicsDevice.DrawUserIndexedPrimitives<VertexPositionColor>(PrimitiveType.TriangleList, Ball.vertices, 0, Ball.nvertices, 

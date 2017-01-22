@@ -78,6 +78,9 @@
     <MonoGameContentReference Include="Content\Content.mgcb">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </MonoGameContentReference>
+    <None Include="Content\custom.fx">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
     <None Include="Content\GaussianBlur.fx" />
     <None Include="Content\GlassEffect.fx">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
